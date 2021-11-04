@@ -1,4 +1,4 @@
-from flask import jsonify, request, flash, url_for, make_response, redirect
+from flask import json, jsonify, request, flash, url_for, make_response, redirect, abort
 from werkzeug.utils import secure_filename
 import os
 from . import main
@@ -16,28 +16,28 @@ def upload():
     if request.method == "POST":
 
         if "file" not in request.files:
-            flash("No file part")
-            return redirect(url_for("main.upload"))
+            return make_response(jsonify({"response": "No file part"}))
 
         ifc_file = request.files["file"]
         filename = secure_filename(ifc_file.filename)
 
         if filename == "":
-            flash("No file selected")
-            return redirect(url_for("main.upload"))
+            return make_response(jsonify({"response": "No file selected"}))
 
         if File.query.filter_by(file_name=filename).first() is not None:
-            flash("File already exists in the database.")
-            return redirect(url_for("main.upload"))
-        else:
-            description = request.args.get("description", "")
-            construction_ifc_id = request.args.get("construction_ifc_id", "")
-            file_entry = File(file_name=ifc_file.filename, description=description, construction_ifc_id=construction_ifc_id)
-            ifc_file.save(os.path.join(files_dir, filename))
-            db.session.add(file_entry)
-            db.session.commit()
+            return make_response(jsonify({"response": "File already exists in the database"}))
 
-        return make_response(jsonify({"response": "Success"}), 202)
+        if filename[-4:] != ".ifc":
+            return make_response(jsonify({"response": "File extension not allowed, the file should be an IFC file"}))
+        
+        description = request.args.get("description", "")
+        construction_ifc_id = request.args.get("construction_ifc_id", "")
+        file_entry = File(file_name=ifc_file.filename, description=description, construction_ifc_id=construction_ifc_id)
+        ifc_file.save(os.path.join(files_dir, filename))
+        db.session.add(file_entry)
+        db.session.commit()
+
+        return make_response(jsonify({"response": "Success"}), 201)
     
     return make_response(jsonify({"response": "Upload a new file"}), 200)
 
@@ -45,4 +45,12 @@ def upload():
 @main.route("/constructions/<construction_id>", methods=["GET"])
 def get_ifc_file(construction_id):
 
-    ifc_file = File.query.filter_by(construction_id=construction_id).first()
+    file_record = File.query.filter_by(construction_ifc_id=construction_id).first()
+
+    if file_record is None:
+        abort(404)
+
+    filepath = os.path.join(files_dir, file_record.file_name)
+    file = open(filepath).read()
+    
+    return make_response(jsonify({"file": file}), 200)
