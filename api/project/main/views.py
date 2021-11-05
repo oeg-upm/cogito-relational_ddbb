@@ -19,20 +19,21 @@ def upload():
             return make_response(jsonify({"response": "No file part"}))
 
         ifc_file = request.files["file"]
-        filename = secure_filename(ifc_file.filename)
+
+        filename = request.args.get("filename")
+        description = request.args.get("description", "")
+        construction_ifc_id = request.args.get("construction_ifc_id", "")
 
         if filename == "":
             return make_response(jsonify({"response": "No file selected"}))
 
-        if File.query.filter_by(file_name=filename).first() is not None:
-            return make_response(jsonify({"response": "File already exists in the database"}))
+        """if File.query.filter_by(file_name=filename).first() is not None:
+            return make_response(jsonify({"response": "File already exists in the database"}))"""
 
         if filename[-4:] != ".ifc":
             return make_response(jsonify({"response": "File extension not allowed, the file should be an IFC file"}))
         
-        description = request.args.get("description", "")
-        construction_ifc_id = request.args.get("construction_ifc_id", "")
-        file_entry = File(file_name=ifc_file.filename, description=description, construction_ifc_id=construction_ifc_id)
+        file_entry = File(file_name=filename, description=description, construction_ifc_id=construction_ifc_id)
         ifc_file.save(os.path.join(files_dir, filename))
         db.session.add(file_entry)
         db.session.commit()

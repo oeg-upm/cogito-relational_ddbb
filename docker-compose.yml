@@ -12,6 +12,8 @@ services:
       - ./.env.dev
     depends_on:
       - db
+    networks:
+      - custom-network
 
   db:
     image: postgres
@@ -21,6 +23,12 @@ services:
       - POSTGRES_USER=serge
       - POSTGRES_PASSWORD=1234
       - POSTGRES_DB=file_storage
+    networks:
+      - custom-network
+
+networks:
+  custom-network:
+    driver: bridge
 
 volumes:
   postgres_data:
