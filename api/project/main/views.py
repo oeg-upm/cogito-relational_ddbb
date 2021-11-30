@@ -54,4 +54,4 @@ def get_ifc_file(construction_id):
     filepath = os.path.join(files_dir, file_record.file_name)
     file = open(filepath).read()
     
-    return make_response(jsonify({"file": file}), 200)
+    return file
