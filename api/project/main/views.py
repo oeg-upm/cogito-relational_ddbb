@@ -22,18 +22,15 @@ def upload():
 
         filename = request.args.get("filename")
         description = request.args.get("description", "")
-        construction_ifc_id = request.args.get("construction_ifc_id", "")
+        file_id = request.args.get("file_id", "")
 
         if filename == "":
             return make_response(jsonify({"response": "No file selected"}))
 
-        """if File.query.filter_by(file_name=filename).first() is not None:
-            return make_response(jsonify({"response": "File already exists in the database"}))"""
-
         if filename[-4:] != ".ifc":
             return make_response(jsonify({"response": "File extension not allowed, the file should be an IFC file"}))
         
-        file_entry = File(file_name=filename, description=description, construction_ifc_id=construction_ifc_id)
+        file_entry = File(file_name=filename, description=description, construction_ifc_id=file_id)
         ifc_file.save(os.path.join(files_dir, filename))
         db.session.add(file_entry)
         db.session.commit()
@@ -43,10 +40,10 @@ def upload():
     return make_response(jsonify({"response": "Upload a new file"}), 200)
 
 
-@main.route("/constructions/<construction_id>", methods=["GET"])
-def get_ifc_file(construction_id):
+@main.route("/files/<id>", methods=["GET"])
+def get_ifc_file(id):
 
-    file_record = File.query.filter_by(construction_ifc_id=construction_id).first()
+    file_record = File.query.filter_by(construction_ifc_id=id).first()
 
     if file_record is None:
         abort(404)
